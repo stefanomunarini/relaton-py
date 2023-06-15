@@ -1,0 +1,29 @@
+name: testing
+
+on:
+  workflow_dispatch:
+    inputs:
+     commit-indexes:
+       description: >
+         Defines whether index files should be committed to the repository or not.
+       required: false
+       default: true
+       type: boolean
+  push:
+
+
+jobs:
+  testing:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Testing
+        id: tests
+        run: |
+           
+           if ${{commit-indexes}}
+           then
+             echo "committing indexes"
+           fi
