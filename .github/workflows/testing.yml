@@ -10,6 +10,13 @@ on:
        default: true
        type: boolean
   push:
+    inputs:
+     commit-indexes:
+       description: >
+         Defines whether index files should be committed to the repository or not.
+       required: false
+       default: true
+       type: boolean
 
 
 jobs:
@@ -22,7 +29,7 @@ jobs:
       - name: Testing
         id: tests
         run: |
-           
+           commit-indexes = true
            if ${{commit-indexes}}
            then
              echo "committing indexes"
