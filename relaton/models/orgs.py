@@ -2,8 +2,8 @@ from typing import Optional, Union, List
 
 from pydantic.dataclasses import dataclass
 
-from .contacts import Contact
-
+from .contacts import ContactMethod
+from .strings import GenericStringValue
 
 __all__ = ('Organization', )
 
@@ -12,7 +12,7 @@ __all__ = ('Organization', )
 class Organization:
     """Describes an organization."""
 
-    name: Union[List[str], str]
-    contact: Optional[List[Contact]] = None
+    name: Union[List[GenericStringValue], GenericStringValue]
+    contact: Optional[List[ContactMethod]] = None
     url: Optional[str] = None
-    abbreviation: Optional[str] = None
+    abbreviation: Optional[GenericStringValue] = None

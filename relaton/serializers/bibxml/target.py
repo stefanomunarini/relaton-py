@@ -2,7 +2,6 @@ from typing import List
 
 from ...models.links import Link
 
-
 __all__ = (
   'get_suitable_target',
 )
@@ -18,7 +17,7 @@ def get_suitable_target(links: List[Link]):
     """
     try:
         target: Link = (
-            [l for l in links if l.type == 'src']
+            [l for l in links if l.type in ('src', 'pdf')]
             or links)[0]
     except IndexError:
         raise ValueError("Unable to find a suitable target (no links given)")

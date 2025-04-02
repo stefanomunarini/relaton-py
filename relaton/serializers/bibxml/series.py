@@ -2,7 +2,6 @@ from typing import Union, Tuple, Callable, List
 
 from ...models.bibdata import DocID
 
-
 __all__ = (
     'DOCID_SERIES_EXTRACTORS',
 )
@@ -35,7 +34,11 @@ def extract_w3c_series(docid: DocID) -> Union[Tuple[str, str], None]:
 def extract_3gpp_tr_series(docid: DocID) -> Union[Tuple[str, str], None]:
     if docid.type.lower() == '3gpp':
         ver = docid.id.split('/')[-1]
-        id = docid.id.split('3GPP TR ')[1].split(':')[0]
+        # TODO: This is insufficient
+        try:
+            id = docid.id.split('3GPP TR ')[1].split(':')[0]
+        except IndexError:
+            return None
         return '3GPP TR', f'{id} {ver}'
     return None
 
@@ -54,12 +57,12 @@ def extract_ieee_series(docid: DocID) -> Union[Tuple[str, str], None]:
 DOCID_SERIES_EXTRACTORS: List[
     Callable[[DocID], Union[Tuple[str, str], None]]
 ] = [
-    extract_doi_series,
     extract_rfc_series,
     extract_id_series,
     extract_w3c_series,
     extract_3gpp_tr_series,
     extract_ieee_series,
+    extract_doi_series,
 ]
 """A list of functions capable of extracting series information
 as 2-tuple (series name, document number)

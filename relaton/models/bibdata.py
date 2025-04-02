@@ -8,21 +8,23 @@ Some of Relaton models implemented as Pydantic models.
 # supported. Stick to plain text.
 
 from __future__ import annotations
+
 # Required for circular dependency
 # between BibliographicItem and Relation.
 
-from typing import List, Union, Optional
 import datetime
+from typing import List, Union, Optional
 
 from pydantic import BaseModel, Extra, validator
 from pydantic.dataclasses import dataclass
 
+from .bibitemlocality import LocalityStack, Locality
 from .copyrights import Copyright
-from .strings import Title, GenericStringValue
-from .people import Person
-from .orgs import Organization
-from .links import Link
 from .dates import Date, validate_relaxed_date
+from .links import Link
+from .orgs import Organization
+from .people import Person
+from .strings import Title, GenericStringValue
 
 
 __all__ = (
@@ -99,18 +101,59 @@ class Series(BaseModel):
 
 
 @dataclass
-class Contributor:
-    """Anyone who helped create or publish the document."""
+class Role:
+    type: Optional[str] = None
+    """See ``ContributorRoleType``."""
 
-    role: Union[List[str], str]
+    description: Optional[List[GenericStringValue]] = None
+
+
+@dataclass
+class Contributor:
+    """Anyone who helped create or publish the document.
+
+    .. important:: This is equivalent of ``ContributionInfo`` model in LutaML;
+                   ``Contributor`` itself is defined as a union of
+                   ``Person`` or ``Organization`` in LutaML.
+    """
+
+    role: List[Role]
     person: Optional[Person] = None
     organization: Optional[Organization] = None
+
+
+@dataclass
+class Doctype:
+    type: str
+    abbreviation: Optional[str] = None
 
 
 @dataclass
 class Edition:
     content: str
     number: Optional[str] = None
+
+
+@dataclass
+class KeywordType:
+    """
+    Keyword for a bibliographic item.
+    Is represented in one of three ways: as a string (uncontrolled vocabulary);
+    as a string with associated identifiers (controlled vocabulary);
+    or as a hierarchical sequence of strings with associated identifiers (taxonomy).
+    """
+    content: Optional[str] = None
+
+
+@dataclass
+class VersionInfo:
+    """Describes a version. Could be used for drafts."""
+
+    draft: Optional[str] = None
+    """Draft version."""
+
+    # revdate: Optional[Union[str, datetime.date]] = None
+    # """Revision date (format not clear)"""
 
 
 class BibliographicItem(BaseModel, extra=Extra.allow):
@@ -129,24 +172,24 @@ class BibliographicItem(BaseModel, extra=Extra.allow):
     # are mandatory in absence of formattedref.
 
     formattedref: Optional[GenericStringValue] = None
-    """References a bibliographic item via a primary ID.
-    Exclusive with other properties.
-
-    Tends to be used, for example, when this bibliographic item
-    is used as :data:`.Relation.bibitem`.
+    """A human-readable string representing this bibliographic item
+    in a not strongly specified way.
     """
 
-    docid: Optional[Union[List[DocID], DocID]] = None
+    docid: List[DocID]
+    """A list of identifiers. The only required property."""
 
     docnumber: Optional[str] = None
     language: Optional[Union[List[str], str]] = None
     type: Optional[str] = None
-    doctype: Optional[str] = None
+    doctype: Optional[Doctype] = None
     script: Optional[Union[List[str], str]] = None
     date: Optional[Union[List[Date], Date]] = None
     link: Optional[Union[List[Link], Link]] = None
 
     relation: 'Optional[List[Relation]]' = None
+
+    version: Optional[List[VersionInfo]] = None
 
     title: Optional[Union[List[Title], Title]] = None
     edition: Optional[Edition] = None
@@ -164,14 +207,17 @@ class BibliographicItem(BaseModel, extra=Extra.allow):
 
     series: Optional[List[Series]] = None
 
-    keyword: Optional[Union[List[str], str]] = None
+    keyword: Optional[Union[List[KeywordType], KeywordType]] = None
 
     copyright: Optional[Union[List[Copyright], Copyright]] = None
+
+    extent: Optional[Union[LocalityStack, Locality]] = None
 
     @validator('revdate', pre=True)
     def validate_revdate(cls, v, **kwargs):
         """Validates ``revdate``, allowing it to be unspecific."""
         if isinstance(v, list):
+            # TODO: Could this be handled with ``each_item`` keyword instead?
             return [
                 validate_relaxed_date(i)
                 for i in v

@@ -8,23 +8,22 @@ Primary API is :func:`.serialize()`.
 """
 
 from typing import List
-from xml.etree.ElementTree import Element
+
 from lxml import objectify, etree
+from lxml.etree import _Element
 
-from ...util import as_list
-from ...models.bibdata import BibliographicItem, Relation
-
-from .reference import create_reference, create_referencegroup
 from .anchor import get_suitable_anchor
+from .reference import create_reference, create_referencegroup
 from .target import get_suitable_target
-
+from ...models.bibdata import BibliographicItem, Relation
+from ...util import as_list
 
 __all__ = (
     'serialize',
 )
 
 
-def serialize(item: BibliographicItem, anchor: str = None) -> Element:
+def serialize(item: BibliographicItem, anchor: str = None) -> _Element:
     """Converts a BibliographicItem to XML,
     trying to follow RFC 7991.
 
@@ -38,43 +37,28 @@ def serialize(item: BibliographicItem, anchor: str = None) -> Element:
                         that make it unrenderable per RFC 7991.
     """
 
-    titles = as_list(item.title or [])
     relations: List[Relation] = as_list(item.relation or [])
 
     constituents = [rel for rel in relations if rel.type == 'includes']
 
-    is_referencegroup = len(titles) < 1 and len(constituents) > 0
-    is_reference = len(titles) > 0
+    is_referencegroup = len(constituents) > 0
 
-    if is_reference:
-        root = create_reference(item)
-
-    elif is_referencegroup:
+    if is_referencegroup:
         root = create_referencegroup([
             ref.bibitem
-            for ref in constituents])
-
+            for ref in constituents
+        ])
     else:
-        raise ValueError(
-            "Able to construct neither <reference> nor <referencegroup>: "
-            "impossible combination of titles and relations")
+        root = create_reference(item)
 
     # Fill in default root element anchor, unless specified
     if anchor is None:
         try:
-            anchor = get_suitable_anchor(as_list(item.docid or []))
+            anchor = get_suitable_anchor(item)
         except ValueError:
             pass
     if anchor:
         root.set('anchor', anchor)
-
-    # Fill in appropriate target
-    try:
-        target = get_suitable_target(as_list(item.link or []))
-    except ValueError:
-        pass
-    else:
-        root.set('target', target)
 
     objectify.deannotate(root)
     etree.cleanup_namespaces(root)

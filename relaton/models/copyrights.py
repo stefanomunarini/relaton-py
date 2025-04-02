@@ -1,22 +1,15 @@
-from typing import TypedDict, Optional, Union, List
+from typing import TypedDict, Union, List
 
-from pydantic.dataclasses import dataclass
+__all__ = ('Copyright', )
 
-
-__all__ = ('CopyrightOwner', 'Copyright', )
-
-
-@dataclass
-class CopyrightOwner:
-    """Who or which organization holds the copyright.
-    """
-    name: Union[List[str], str]
-    url: Optional[str] = None
-    abbreviation: Optional[str] = None
+from .orgs import Organization
+from .people import Person
 
 
+# ``from`` is reserved in Python, so if we can’t alias it we’ll just use
+# a ``TypedDict`` instead of a dataclass.
 # Pydantic dataclasses don’t actually support aliases, contrary to docs
 Copyright = TypedDict('Copyright', {
     'from': int,
-    'owner': Union[List[CopyrightOwner]],
+    'owner': List[Union[Organization, Person]],
 })
